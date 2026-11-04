@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>미스터블루 (207760) 기업 노트</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<style>
+:root{
+  --bg:#f6f7f9; --card:#fff; --ink:#15181d; --ink2:#4a5260; --ink3:#8a93a3; --line:#e4e7ec;
+  --navy:#0d2c6c; --accent:#2457d6; --accent-soft:#e8efff; --up:#d63b3b; --down:#2f6fd6;
+  --t-dis:#2f6fd6; --t-co:#1f8a52; --t-ext:#6b7280; --t-hear:#d27a12; --t-est:#7b4fc9; --t-visit:#c2185b;
+  --r:12px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Pretendard Variable",Pretendard,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;font-size:15px;line-height:1.65;word-break:keep-all}
+a{color:var(--accent)}
+.wrap{max-width:1120px;margin:0 auto;padding:0 20px}
+header.top{background:var(--navy);color:#fff;padding:28px 0 22px}
+header.top .kicker{font-size:13px;opacity:.75;letter-spacing:.02em}
+header.top h1{margin:4px 0 6px;font-size:28px;letter-spacing:-.02em}
+header.top .meta{font-size:13px;opacity:.85}
+nav.toc{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.96);backdrop-filter:blur(6px);border-bottom:1px solid var(--line)}
+nav.toc .wrap{display:flex;gap:4px;overflow-x:auto;padding:8px 20px;scrollbar-width:none}
+nav.toc a{flex:none;font-size:13px;color:var(--ink2);text-decoration:none;padding:5px 10px;border-radius:999px}
+nav.toc a:hover,nav.toc a.on{background:var(--accent-soft);color:var(--accent)}
+section{margin:28px 0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:22px 24px}
+h2{font-size:21px;margin:0 0 14px;letter-spacing:-.02em;display:flex;align-items:baseline;gap:10px}
+h2 .no{font-size:13px;color:var(--accent);font-weight:700;font-variant-numeric:tabular-nums}
+h3{font-size:16px;margin:22px 0 8px}
+p{margin:6px 0 10px}
+.muted{color:var(--ink3);font-size:13px}
+.small{font-size:13px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{background:#f2f4f7;font-weight:600;color:var(--ink2);white-space:nowrap}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.neg{color:var(--down)} .pos{color:var(--up)}
+.tbl-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.tag{display:inline-block;font-size:11px;font-weight:700;padding:1px 6px;border-radius:4px;margin-left:4px;vertical-align:1px;color:#fff;white-space:nowrap}
+.tag.dis{background:var(--t-dis)} .tag.co{background:var(--t-co)} .tag.ext{background:var(--t-ext)}
+.tag.hear{background:var(--t-hear)} .tag.est{background:var(--t-est)} .tag.visit{background:var(--t-visit)}
+.srcbox{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:8px 18px;font-size:13px;color:var(--ink2)}
+.srcbox div{padding:4px 0;border-bottom:1px dashed var(--line)}
+/* 시세 바 */
+.quote{display:grid;grid-template-columns:minmax(260px,1.1fr) 2fr;gap:20px;align-items:stretch}
+.quote .px{font-size:38px;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1.1}
+.quote .chg{font-size:16px;font-weight:600;font-variant-numeric:tabular-nums}
+.quote .stat{display:grid;grid-template-columns:repeat(3,1fr);gap:8px 14px;margin-top:12px;font-size:13px}
+.quote .stat b{display:block;font-size:15px;font-variant-numeric:tabular-nums}
+.live-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#aaa;margin-right:6px;vertical-align:1px}
+.live-dot.on{background:#1fbf6a;box-shadow:0 0 0 0 rgba(31,191,106,.6);animation:pulse 2s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(31,191,106,.5)}70%{box-shadow:0 0 0 8px rgba(31,191,106,0)}100%{box-shadow:0 0 0 0 rgba(31,191,106,0)}}
+#chart{width:100%;height:220px;display:block}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{border:0;background:#fff;padding:4px 10px;font:inherit;font-size:12px;color:var(--ink2);cursor:pointer}
+.seg button.on{background:var(--navy);color:#fff}
+/* 핵심 박스 */
+.keybox{border-left:5px solid var(--accent);background:linear-gradient(90deg,var(--accent-soft),#fff 60%)}
+.keybox .lead{font-size:18px;font-weight:700;letter-spacing:-.01em;margin:0 0 10px}
+.keybox ol{margin:0;padding-left:20px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:16px}
+.tile{background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.tile .k{font-size:12px;color:var(--ink3)}
+.tile .v{font-size:20px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.tile .s{font-size:12px;color:var(--ink2)}
+/* 그림 */
+figure{margin:16px 0;background:#fbfcfd;border:1px solid var(--line);border-radius:10px;padding:14px}
+figure svg{width:100%;height:auto;display:block}
+figcaption{font-size:13px;color:var(--ink2);margin-top:10px;border-top:1px dashed var(--line);padding-top:10px}
+figcaption b{color:var(--ink)}
+.flow{stroke-dasharray:6 8;animation:flow 1.2s linear infinite}
+@keyframes flow{to{stroke-dashoffset:-28}}
+.noise{stroke-dasharray:3 5;animation:flow .6s linear infinite}
+.blink{animation:blink 2.4s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:.35}50%{opacity:1}}
+.fold{transform-box:view-box;transform-origin:330px 150px;animation:fold 5s ease-in-out infinite}
+@keyframes fold{0%,15%{transform:scaleX(1)}45%,60%{transform:scaleX(.12)}90%,100%{transform:scaleX(1)}}
+/* 타임라인 */
+.tl{position:relative;margin:10px 0 0 6px;padding-left:22px;border-left:2px solid var(--line)}
+.tl .ev{position:relative;margin:0 0 12px}
+.tl .ev:before{content:"";position:absolute;left:-29px;top:7px;width:12px;height:12px;border-radius:50%;background:#fff;border:3px solid var(--accent)}
+.tl .ev.big:before{background:var(--accent)}
+.tl .d{font-size:12px;color:var(--ink3);font-variant-numeric:tabular-nums}
+/* 질문지 */
+.qbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:8px 0 14px}
+.qbar .seg button{font-size:13px;padding:6px 12px}
+.q{border:1px solid var(--line);border-radius:10px;margin:10px 0;background:#fff}
+.q.done{opacity:.55}
+.q .qh{display:flex;gap:10px;align-items:flex-start;padding:12px 14px}
+.q .qh input[type=checkbox]{width:18px;height:18px;margin-top:3px;flex:none;accent-color:var(--accent)}
+.q .qid{font-weight:800;color:var(--navy);font-variant-numeric:tabular-nums;flex:none;min-width:30px}
+.q .star{color:#e0a100;letter-spacing:-1px;flex:none;font-size:13px;margin-top:2px}
+.q .topic{font-size:12px;color:var(--accent);font-weight:700}
+.q .ask{font-size:15px;margin-top:2px}
+.q details{border-top:1px dashed var(--line);padding:0 14px}
+.q details summary{cursor:pointer;font-size:13px;color:var(--ink2);padding:8px 0}
+.q .why{font-size:13.5px;color:var(--ink2);padding-bottom:10px}
+.q .why dt{font-weight:700;color:var(--ink);margin-top:6px}
+.q .why dd{margin:2px 0 0 0}
+.q textarea{width:100%;min-height:54px;border:1px solid var(--line);border-radius:8px;padding:8px 10px;font:inherit;font-size:13.5px;resize:vertical;margin-bottom:12px;background:#fffef6}
+.top5{background:#fff8e6;border:1px solid #f1d58a}
+.pill{display:inline-block;padding:2px 9px;border-radius:999px;background:#eef1f5;font-size:12px;margin:2px 4px 2px 0}
+/* 00 탐방 기록 */
+.visit-table input,.visit-table textarea{width:100%;border:1px solid var(--line);border-radius:6px;padding:6px 8px;font:inherit;font-size:13.5px;background:#fffef6}
+.visit-table textarea{min-height:40px;resize:vertical}
+.btn{border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 12px;font:inherit;font-size:13px;cursor:pointer}
+.btn.primary{background:var(--navy);color:#fff;border-color:var(--navy)}
+.calc{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin:10px 0}
+.calc label{font-size:12px;color:var(--ink2);display:block}
+.calc input{width:100%;padding:7px 9px;border:1px solid var(--line);border-radius:8px;font:inherit;font-variant-numeric:tabular-nums;background:#fffef6}
+.calc .out{background:var(--accent-soft);border-radius:8px;padding:8px 10px}
+.calc .out b{font-size:18px;font-variant-numeric:tabular-nums}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.news li{margin:4px 0}
+.news .nd{font-size:12px;color:var(--ink3);font-variant-numeric:tabular-nums;margin-right:6px}
+.warn{background:#fff4f2;border:1px solid #f3c7bf;border-radius:10px;padding:10px 14px;font-size:13.5px}
+footer{padding:30px 0 60px;color:var(--ink3);font-size:12px}
+@media (max-width:760px){
+  .quote{grid-template-columns:1fr}
+  .two{grid-template-columns:1fr}
+  header.top h1{font-size:23px}
+  .card{padding:18px 16px}
+}
+@media print{nav.toc,.qbar,.btn{display:none} .card{break-inside:avoid} body{background:#fff}}
+
+/* 기업 노트 추가 스타일 */
+.badge{display:inline-block;font-size:11.5px;font-weight:700;padding:2px 8px;border-radius:999px;white-space:nowrap}
+.st-서비스{background:#e2f5ea;color:#1f8a52}.st-확장{background:#e8efff;color:#2457d6}.st-준비{background:#fff2dc;color:#b86a0c}.st-개발{background:#efe9fb;color:#7b4fc9}.st-중단{background:#eee;color:#777}
+.os-미확인{background:#fde8e8;color:#c0392b}.os-일부{background:#fff2dc;color:#b86a0c}.os-확인{background:#e2f5ea;color:#1f8a52}
+.ty{display:inline-block;font-size:11.5px;font-weight:700;padding:1px 8px;border-radius:6px;background:#eef1f5;color:var(--ink2)}
+.ty-미팅{background:#fff2dc;color:#b86a0c}.ty-공시{background:#e6eefc;color:#2f6fd6}.ty-기사{background:#eef1f5;color:#4a5260}.ty-IR{background:#e2f5ea;color:#1f8a52}.ty-메모{background:#efe9fb;color:#7b4fc9}
+.filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:4px 0 12px}
+.filters input[type=search]{flex:1;min-width:180px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;font:inherit;font-size:13.5px}
+.log{border-left:3px solid var(--line);padding:2px 0 2px 16px;margin:0 0 18px;position:relative}
+.log:before{content:"";position:absolute;left:-7px;top:6px;width:11px;height:11px;border-radius:50%;background:#fff;border:3px solid var(--accent)}
+.log.t-미팅{border-left-color:#f1c27d}.log.t-미팅:before{border-color:#d27a12}
+.log.t-공시:before{border-color:#2f6fd6}
+.log .lh{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.log .ld{font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--ink2)}
+.log .lt{font-weight:700}
+.log ul{margin:6px 0 0;padding-left:18px;font-size:14px;color:var(--ink2)}
+.log ul li{margin:2px 0}
+.log .web{font-size:11px;color:var(--ink3)}
+.addform{display:grid;grid-template-columns:140px 110px 110px 1fr;gap:8px;margin-top:10px}
+.addform input,.addform select,.addform textarea{padding:7px 9px;border:1px solid var(--line);border-radius:8px;font:inherit;font-size:13.5px;background:#fff}
+.addform textarea{grid-column:1/-1;min-height:110px}
+.addform .full{grid-column:1/-1}
+.cols3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.cols3 h3{margin-top:0}
+.cols3 ul{margin:0;padding-left:18px;font-size:14px}
+.cols3 li{margin:4px 0}
+.segbar{display:flex;height:34px;border-radius:8px;overflow:hidden;margin:8px 0 6px}
+.segbar div{display:flex;align-items:center;justify-content:center;color:#fff;font-size:12.5px;font-weight:700;white-space:nowrap;overflow:hidden}
+.legend-tags{font-size:12.5px;color:var(--ink2)}
+details.box summary{cursor:pointer;font-weight:600;font-size:14px}
+
+.exp-btn{width:100%;display:flex;justify-content:space-between;align-items:center;gap:10px;background:none;border:0;padding:16px 24px;font:inherit;text-align:left;cursor:pointer;color:var(--ink)}
+.exp-btn:hover{background:#f8fafb}
+.exp-btn .chev{transition:transform .2s;color:var(--ink3)}
+.exp-btn[aria-expanded=true] .chev{transform:rotate(180deg)}
+.exp-body{padding:0 24px 20px;border-top:1px solid var(--line)}
+.today{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin:14px 0}
+.today .tile .v{font-size:18px}
+.mv{border:1px solid var(--line);border-radius:10px;padding:10px 14px;margin:8px 0;background:#fff}
+.mv .mh{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.mv .md{font-weight:700;font-variant-numeric:tabular-nums}
+.mv .mr{font-size:17px;font-weight:800;font-variant-numeric:tabular-nums}
+.mv .meta{font-size:12.5px;color:var(--ink2)}
+.mv ul{margin:6px 0 0;padding-left:18px;font-size:13.5px}
+.mv li{margin:2px 0}
+.chip{display:inline-block;font-size:11.5px;padding:1px 7px;border-radius:6px;background:#eef1f5;color:var(--ink2);margin-right:4px}
+.bar{position:relative;height:8px;background:#f0f2f5;border-radius:4px;min-width:80px}
+.bar i{position:absolute;top:0;bottom:0;border-radius:4px}
+.tabs{margin-top:14px}
+.tabs button{font-size:13px;padding:6px 14px}
+.thm{margin:12px 0 4px;display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+@media (max-width:760px){.cols3{grid-template-columns:1fr}.addform{grid-template-columns:1fr 1fr}}
+
+/* 미스터블루 추가 */
+tr.sub td{color:var(--ink2);font-size:13px;background:#fafbfd}
+.covers{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px;margin:12px 0 4px}
+.cover{margin:0;background:#fff;border:1px solid var(--line);border-radius:10px;overflow:hidden;padding:0}
+.cover img,.cover .ph{display:block;width:100%;aspect-ratio:1080/1560;object-fit:cover;background:#0d2c6c}
+.cover .ph{display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:22px;letter-spacing:.04em;background:linear-gradient(160deg,#0d2c6c,#2457d6)}
+.cover .ph small{font-size:12px;font-weight:500;opacity:.8;margin-top:6px}
+.cover figcaption{margin:0;border:0;padding:8px 10px;font-size:12.5px}
+.cover figcaption b{display:block;font-size:13.5px}
+.chip2{display:inline-block;font-size:11px;font-weight:700;padding:1px 6px;border-radius:4px;background:#e8efff;color:#2457d6;margin-right:4px}
+.chip2.n2{background:#fff2dc;color:#b86a0c}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <div class="kicker">기업 노트 · KOSDAQ 207760 · 웹툰·웹소설 플랫폼 / 무협 IP / 게임</div>
+    <h1>미스터블루 (Mr. Blue Corporation)</h1>
+    <div class="meta">최초 작성 <span id="created"></span> · 최근 업데이트 <b id="lastUpdated"></b> · 누적 기록 <span id="logCount"></span>건</div>
+  </div>
+</header>
+
+<nav class="toc"><div class="wrap">
+  <a href="#quote">시세</a><a href="#overview">개요</a><a href="#thesis">투자 관점</a><a href="#biz">사업</a><a href="#items">IP·사업</a>
+  <a href="#fin">실적·재무</a><a href="#capital">자본 이력</a><a href="#val">밸류</a><a href="#industry">산업</a>
+  <a href="#log">누적 기록</a><a href="#open">확인할 것</a><a href="#watch">일정·리스크</a><a href="#news">기사</a><a href="#history">연혁</a><a href="#glossary">용어</a><a href="#src">출처·이력</a>
+</div></nav>
+
+<main class="wrap">
+
+<section>
+  <div class="legend-tags">출처 표시:
+    <span class="tag dis">공시</span> DART·정기보고서·거래소 <span class="tag co">회사</span> 보도자료·IR·내부 자료 <span class="tag ext">외부</span> 언론·리서치
+    <span class="tag hear">전언</span> 미팅에서 들은 말 <span class="tag est">추정</span> 계산값·해석
+  </div>
+</section>
+
+<!-- 시세 -->
+<section id="quote">
+  <div class="card quote">
+    <div>
+      <div class="muted"><span class="live-dot" id="liveDot"></span><span id="liveLabel">시세 불러오는 중…</span></div>
+      <div class="px" id="qPrice">–</div>
+      <div class="chg" id="qChg">&nbsp;</div>
+      <div class="stat">
+        <div><span class="muted">시가총액</span><b id="qCap">–</b></div>
+        <div><span class="muted">PBR</span><b id="qPbr">–</b></div>
+        <div><span class="muted">거래량</span><b id="qVol">–</b></div>
+        <div><span class="muted">52주 고가</span><b id="qHi">–</b></div>
+        <div><span class="muted">52주 저가</span><b id="qLo">–</b></div>
+        <div><span class="muted">상장주식수</span><b id="qSh">–</b></div>
+      </div>
+      <p class="muted" style="margin-top:12px">2026.05 5:1 주식병합 결정 → 08.03~09.01 매매정지 → 09.02 변경상장·거래 재개. 차트는 수정주가 기준.</p>
+    </div>
+    <div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <b class="small">일봉 종가</b>
+        <div class="seg" id="rangeSeg"><button data-d="60">3M</button><button data-d="180" class="on">6M</button><button data-d="365">1Y</button></div>
+      </div>
+      <svg id="chart" viewBox="0 0 640 220" preserveAspectRatio="none"></svg>
+      <div id="invBox" class="small" style="margin-top:8px"></div>
+    </div>
+  </div>
+</section>
+
+<!-- 왜 움직였나 -->
+<section id="why" style="margin-top:-14px">
+  <div class="card" style="padding:0">
+    <button class="exp-btn" id="whyBtn" aria-expanded="false">
+      <span><b>📉📈 주가가 왜 움직였나</b> <span class="muted small" id="whyHint">오늘 등락 · 시장 대비 · 수급 · 같은 날 나온 뉴스 · 큰 변동일</span></span>
+      <span class="chev">▾</span>
+    </button>
+    <div class="exp-body" id="whyBody" hidden>
+      <div id="whyToday"></div>
+      <h3>최근 6개월 큰 움직임</h3>
+      <p class="muted small" style="margin-top:0">하루 등락 ±5% 이상이거나 거래량이 평소(20일 평균)의 3배 이상인 날. 같은 날·전 거래일 이후 나온 뉴스와 기록, 그날 코스닥 등락, 수급을 함께 보여줍니다. <b>자동 매칭은 '같은 시기에 있었던 일'이지 원인을 확정한 것이 아닙니다.</b> 확인된 이유는 <span class="badge os-확인">확인</span>으로 표시합니다. 병합 전후(08~09월)는 거래정지 기간이라 재개일 등락이 크게 잡힙니다.</p>
+      <div class="filters" style="margin:0 0 8px"><div class="seg" id="moveFilter"><button data-f="all" class="on">전체</button><button data-f="up">상승</button><button data-f="down">하락</button></div></div>
+      <div id="whyMoves"></div>
+    </div>
+  </div>
+</section>
+
+<!-- 주변 시장 -->
+<section id="around" style="margin-top:-14px">
+  <div class="card" style="padding:0">
+    <button class="exp-btn" id="aroundBtn" aria-expanded="false">
+      <span><b>🧭 다음 단계 — 주변 시장 함께 보기</b> <span class="muted small">동종 웹툰주 · 플랫폼·게임·IP 테마 · 산업·시장 · 주요 이슈</span></span>
+      <span class="chev">▾</span>
+    </button>
+    <div class="exp-body" id="aroundBody" hidden>
+      <div class="seg tabs" id="aroundTabs">
+        <button data-t="peers" class="on">동종기업</button><button data-t="themes">관련 테마</button><button data-t="market">산업·시장</button><button data-t="issues">주요 이슈</button>
+      </div>
+      <div id="aroundSummary" class="small" style="margin:10px 0"></div>
+      <div id="aroundPane"></div>
+      <p class="muted small" style="margin-top:10px">등락률은 KIS 실시간(30초 캐시). 테마 구성 종목은 <code>public/data/mrblue-data.js</code>의 <code>MARKET</code>에서 바꿀 수 있습니다.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 개요 -->
+<section id="overview">
+  <div class="card">
+    <h2><span class="no">01</span>기업 개요</h2>
+    <div class="two">
+      <div class="tbl-scroll"><table id="profileTbl"></table></div>
+      <div>
+        <div class="tiles" style="margin-top:0">
+          <div class="tile"><div class="k">2025 매출 / 영업이익</div><div class="v">675억 / <span class="neg">-25억</span></div><div class="s">순손실 186억 <span class="tag dis">공시</span></div></div>
+          <div class="tile"><div class="k">1H26 매출 / 영업이익</div><div class="v">327억 / <span class="pos">+6.2억</span></div><div class="s">1Q +5.3억, 2Q +1.0억 · 흑자 전환</div></div>
+          <div class="tile"><div class="k">자본총계 (<span class="eqAsOf"></span>)</div><div class="v"><span class="eqV"></span>억</div><div class="s">부채비율 41% · 유동비율 235%</div></div>
+          <div class="tile"><div class="k">1H26 부문 매출</div><div class="v">247 / 80억</div><div class="s">콘텐츠 / 게임</div></div>
+          <div class="tile"><div class="k">시가총액</div><div class="v" id="tCap">–</div><div class="s" id="tCapS">실시간</div></div>
+          <div class="tile"><div class="k">PBR</div><div class="v" id="tPbr">–</div><div class="s">자본 <span class="eqAsOf"></span> 기준 <span class="tag est">추정</span></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 투자 관점 -->
+<section id="thesis">
+  <div class="card keybox">
+    <h2><span class="no">02</span>지금의 투자 관점</h2>
+    <p class="lead" id="oneLine"></p>
+    <div class="cols3">
+      <div><h3>좋아지는 것</h3><ul id="tPoints"></ul></div>
+      <div><h3>걱정되는 것</h3><ul id="tConcerns"></ul></div>
+      <div><h3>추적 지표</h3><ul id="tKpis"></ul></div>
+    </div>
+  </div>
+</section>
+
+<!-- 사업 -->
+<section id="biz">
+  <div class="card">
+    <h2><span class="no">03</span>사업 구조</h2>
+    <p>2003년 문을 연 1세대 만화 플랫폼입니다. 핵심은 <b>직접 보유한 IP를 직접 만들어 직접 판다</b>는 점입니다. 무협 4대천왕(황성·야설록·사마달·하승남)의 저작권을 독점 보유하고, 해외 제작 스튜디오에서 신작·리마스터판을 대량으로 만들어 자체 플랫폼(mrblue.com)에서 팔고, 같은 작품을 네이버·카카오 등 외부 플랫폼에도 공급합니다 <span class="tag co">회사</span>. 여기에 데이즈엔터(웹소설)를 흡수합병했고, 자회사 블루포션게임즈가 PC 게임 '에오스' IP로 모바일 MMORPG를 서비스합니다.</p>
+    <div class="segbar" id="segBar"></div>
+    <div class="muted" id="segAsOf"></div>
+    <div class="tbl-scroll" style="margin-top:8px"><table id="segTbl"></table></div>
+    <figure>
+      <svg viewBox="0 0 900 360" role="img" aria-label="미스터블루 IP 밸류체인">
+        <style>
+          .bx{fill:#fff;stroke:#c9d2dd;stroke-width:1.2}
+          .bxA{fill:#e8efff;stroke:#2457d6;stroke-width:1.4}
+          .lb{font:600 13px Pretendard,sans-serif;fill:#15181d}
+          .sl{font:12px Pretendard,sans-serif;fill:#4a5260}
+          .ln{stroke:#2457d6;stroke-width:2;fill:none}
+          .ln2{stroke:#d27a12;stroke-width:2;fill:none}
+        </style>
+        <!-- IP 원천 -->
+        <rect class="bx" x="10" y="40" width="150" height="120" rx="10"/>
+        <text class="lb" x="85" y="66" text-anchor="middle">보유 IP</text>
+        <text class="sl" x="85" y="88" text-anchor="middle">무협 4대천왕</text>
+        <text class="sl" x="85" y="104" text-anchor="middle">황성·야설록·사마달·하승남</text>
+        <text class="sl" x="85" y="124" text-anchor="middle">웹소설(구 데이즈엔터)</text>
+        <text class="sl" x="85" y="140" text-anchor="middle">BL·로맨스 웹툰</text>
+        <rect class="bx" x="10" y="200" width="150" height="80" rx="10"/>
+        <text class="lb" x="85" y="228" text-anchor="middle">에오스 IP</text>
+        <text class="sl" x="85" y="248" text-anchor="middle">2016 인수 (45억)</text>
+        <text class="sl" x="85" y="264" text-anchor="middle">PC → 모바일 MMORPG</text>
+        <!-- 제작 -->
+        <rect x="195" y="30" width="230" height="300" rx="14" fill="#f4f7fd" stroke="#0d2c6c" stroke-dasharray="4 4"/>
+        <text class="lb" x="310" y="54" text-anchor="middle" style="fill:#0d2c6c">제작</text>
+        <rect class="bxA" x="212" y="70" width="196" height="64" rx="10"/>
+        <text class="lb" x="310" y="96" text-anchor="middle">해외 제작 스튜디오</text>
+        <text class="sl" x="310" y="116" text-anchor="middle">월 6타이틀+ · 약 300권 신작</text>
+        <rect class="bxA" x="212" y="146" width="196" height="56" rx="10"/>
+        <text class="lb" x="310" y="170" text-anchor="middle">디지털 리마스터링</text>
+        <text class="sl" x="310" y="188" text-anchor="middle">옛 종이 만화 → 디지털판</text>
+        <rect class="bxA" x="212" y="214" width="196" height="40" rx="10" style="stroke-dasharray:4 3"/>
+        <text class="sl" x="310" y="239" text-anchor="middle">AI 제작 효율화 (추진 중)</text>
+        <rect class="bxA" x="212" y="266" width="196" height="50" rx="10"/>
+        <text class="lb" x="310" y="288" text-anchor="middle">블루포션게임즈</text>
+        <text class="sl" x="310" y="305" text-anchor="middle">에오스 레드 · 에오스 블랙</text>
+        <path class="ln flow" d="M160 100 H212"/><path class="ln flow" d="M160 240 C185 240 185 291 212 291"/>
+        <path class="ln flow" d="M310 134 V146"/>
+        <!-- 유통 채널 -->
+        <rect class="bx" x="470" y="40" width="190" height="64" rx="10" style="stroke:#2457d6;stroke-width:2"/>
+        <text class="lb" x="565" y="66" text-anchor="middle">자체 플랫폼 mrblue.com</text>
+        <text class="sl" x="565" y="86" text-anchor="middle">웹툰 46억 · 웹소설 32억 (2Q)</text>
+        <rect class="bx" x="470" y="120" width="190" height="56" rx="10"/>
+        <text class="lb" x="565" y="144" text-anchor="middle">외부 플랫폼 유통</text>
+        <text class="sl" x="565" y="162" text-anchor="middle">네이버·카카오 등 · 30억 (2Q)</text>
+        <rect class="bx" x="470" y="192" width="190" height="56" rx="10"/>
+        <text class="lb" x="565" y="216" text-anchor="middle">굿즈·종이책·팝업</text>
+        <text class="sl" x="565" y="234" text-anchor="middle">12억 (2Q)</text>
+        <rect class="bx" x="470" y="264" width="190" height="56" rx="10"/>
+        <text class="lb" x="565" y="288" text-anchor="middle">게임 (국내·대만)</text>
+        <text class="sl" x="565" y="306" text-anchor="middle">37억 (2Q)</text>
+        <path class="ln flow" d="M408 102 C440 102 440 72 470 72"/>
+        <path class="ln flow" d="M408 102 C440 102 440 148 470 148"/>
+        <path class="ln flow" d="M408 174 C440 174 440 72 470 72"/>
+        <path class="ln flow" d="M408 174 C440 174 440 148 470 148"/>
+        <path class="ln flow" d="M408 102 C445 102 445 220 470 220"/>
+        <path class="ln flow" d="M408 291 H470"/>
+        <!-- 독자 -->
+        <rect class="bx" x="710" y="40" width="180" height="90" rx="10"/>
+        <text class="lb" x="800" y="66" text-anchor="middle">독자</text>
+        <text class="sl" x="800" y="86" text-anchor="middle">4050 무협 충성 팬</text>
+        <text class="sl" x="800" y="104" text-anchor="middle">2030 신규 (모바일)</text>
+        <text class="sl" x="800" y="120" text-anchor="middle">BL·로맨스 여성 독자</text>
+        <rect class="bx" x="710" y="236" width="180" height="84" rx="10" style="stroke:#d27a12"/>
+        <text class="lb" x="800" y="262" text-anchor="middle">게이머</text>
+        <text class="sl" x="800" y="282" text-anchor="middle">청풍 스킨·펫 등</text>
+        <text class="sl" x="800" y="298" text-anchor="middle">IP 크로스셀링</text>
+        <path class="ln flow" d="M660 72 H710"/><path class="ln flow" d="M660 148 C690 148 690 100 710 100"/>
+        <path class="ln flow" d="M660 220 C690 220 690 120 710 120"/>
+        <path class="ln flow" d="M660 292 H710"/>
+        <path class="ln2 flow" d="M800 130 V236"/>
+        <text class="sl" x="808" y="190" style="fill:#d27a12">독자 → 게임</text>
+      </svg>
+      <figcaption><b>읽는 법:</b> 왼쪽의 보유 IP가 제작 단계를 거쳐 네 개의 판매 채널로 나가고, 오른쪽 독자·게이머에게 닿습니다. 파란 선은 현재 매출 경로, 주황 선은 2026년에 시작한 IP 연계(4대천왕 → 게임)입니다. <b>투자에서 볼 것:</b> 자체 플랫폼으로 팔면 수수료를 남에게 떼어주지 않아 마진이 가장 좋습니다. 데이즈엔터 합병의 핵심도 외부에 공급하던 웹소설을 자체 플랫폼으로 돌리는 것이라, <b>'플랫폼 매출 비중'이 올라가는지</b>가 수익성의 열쇠입니다.</figcaption>
+    </figure>
+
+    <h3>무협 4대천왕 — 2026년 10월 신작 <span class="tag co">회사</span></h3>
+    <p class="small">10월 1일부터 4명의 작가 신작을 차례로 공개했습니다. 회사는 매월 6개 이상의 타이틀, 약 300권 분량을 공급한다고 밝혔습니다. 2차 라인업 표지(광명선마·불사신의)도 확보돼 있습니다.</p>
+    <div class="covers">
+      <figure class="cover"><div class="ph">火山劍宗<small>표지 원본 용량 초과</small></div><figcaption><b>화산검종</b><span class="chip2">10.1</span>황성</figcaption></figure>
+      <figure class="cover"><img src="img/yaseollok-cheonnyeonmahwang.jpg" alt="야설록 천년마황 표지" loading="lazy"><figcaption><b>천년마황</b><span class="chip2">10.5</span>야설록</figcaption></figure>
+      <figure class="cover"><img src="img/samadal-gwangryong.jpg" alt="사마달 광룡 표지" loading="lazy"><figcaption><b>광룡</b><span class="chip2">10.8</span>사마달</figcaption></figure>
+      <figure class="cover"><img src="img/haseungnam-ugajang.jpg" alt="하승남 우가장 주방보조 표지" loading="lazy"><figcaption><b>우가장 주방보조</b><span class="chip2">10.12</span>하승남</figcaption></figure>
+      <figure class="cover"><img src="img/yaseollok-gwangmyeongseonma.jpg" alt="야설록 광명선마 표지" loading="lazy"><figcaption><b>광명선마</b><span class="chip2 n2">2차</span>야설록</figcaption></figure>
+      <figure class="cover"><div class="ph">不死神<small>표지 원본 용량 초과</small></div><figcaption><b>불사신의</b><span class="chip2 n2">2차</span>황성</figcaption></figure>
+    </div>
+    <p class="muted small">표지 이미지는 프로젝트에 올라온 내부 자료입니다. 황성 작가 2종은 원본 파일이 커서 자리만 표시했습니다 — <code>public/img/</code>에 jpg를 넣고 <code>index.html</code>의 해당 칸을 <code>&lt;img&gt;</code>로 바꾸면 됩니다.</p>
+
+    <h3>자회사·조직</h3>
+    <div class="tbl-scroll"><table>
+      <thead><tr><th>법인</th><th>역할·연혁</th></tr></thead>
+      <tbody>
+        <tr><td><b>블루포션게임즈</b><br><span class="muted">게임 (100% 자회사)</span></td><td>2018.10 물적분할 신설. 에오스 레드(2019, 국내·대만·동남아), 에오스 블랙(2024 국내, 2026.03 대만). 2024년 영업손실 127억 → 1H26 흑자 5.8억 <span class="tag dis">공시</span></td></tr>
+        <tr><td><b>데이즈엔터</b> (합병 소멸)</td><td>2022.02 인수한 동아미디어·영상출판미디어가 2024.07 합병해 출범한 웹소설 CP. 2025.12.31 미스터블루에 흡수합병 — 2026년부터 별도 실적에 웹소설 포함 <span class="tag ext">외부</span></td></tr>
+        <tr><td><b>Mr. Blue Myanmar</b></td><td>해외 제작 스튜디오. 2019년 기준 약 230명이 월 250권 분량의 무협 만화 제작 (대표 발언) <span class="tag ext">외부</span></td></tr>
+        <tr><td><b>블루코믹스 · 더블플러스</b></td><td>콘텐츠 제작 자회사 <span class="tag ext">외부</span></td></tr>
+      </tbody>
+    </table></div>
+  </div>
+</section>
+
+<!-- IP·사업 트래커 -->
+<section id="items">
+  <div class="card">
+    <h2><span class="no">04</span>IP·사업 트래커</h2>
+    <p class="muted">IP·서비스·신사업별 진행 단계를 한 줄씩 관리합니다. 규모는 공개된 수치이며 확정 실적이 아닐 수 있습니다. '최근 업데이트'는 해당 줄 정보를 마지막으로 확인한 날짜.</p>
+    <div class="filters" id="itemFilter"></div>
+    <div class="tbl-scroll"><table id="itemTbl"></table></div>
+  </div>
+</section>
+
+<!-- 실적 -->
+<section id="fin">
+  <div class="card">
+    <h2><span class="no">05</span>실적·재무</h2>
+    <figure>
+      <svg viewBox="0 0 900 300" role="img" aria-label="분기 매출과 영업이익">
+        <defs><linearGradient id="gq" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2457d6"/><stop offset="1" stop-color="#8eaaf0"/></linearGradient></defs>
+        <g id="qbars"></g>
+      </svg>
+      <figcaption><b>읽는 법:</b> 막대는 분기 연결 매출, 아래 칩은 영업이익(초록 흑자·빨강 적자)입니다. 매출은 2024년 3분기 이후 160~175억에 머물러 있는데, 영업이익은 -46억 → +5억으로 바뀌었습니다. <b>즉 흑자 전환은 매출이 늘어서가 아니라 비용(특히 게임 인건비·광고비)을 줄여서</b> 생겼습니다. 다음 단계는 매출이 다시 오르는지입니다.</figcaption>
+    </figure>
+    <h3>연간 (연결, 억 원) <span class="tag dis">공시</span></h3>
+    <div class="tbl-scroll"><table id="annualTbl"></table></div>
+    <p class="small">2019~2020년 고수익은 에오스 레드(게임) 덕분이었고, 게임이 꺾이며 2024년 -136억까지 떨어졌습니다. 콘텐츠 부문은 2022년 웹소설 인수로 매출이 548억까지 커졌지만 이익률은 8% → 적자로 내려왔습니다. 2023~2025년 순손실이 영업손실보다 큰 건 손상 등 영업외 비용 영향으로 보입니다 <span class="tag est">추정</span>.</p>
+    <h3>분기 (연결, 억 원)</h3>
+    <div class="tbl-scroll"><table id="qTbl"></table></div>
+    <h3>재무상태 (억 원) <span class="tag dis">공시</span></h3>
+    <div class="tbl-scroll"><table id="bsTbl"></table></div>
+    <p class="small">부채비율 41%, 유동비율 235%로 차입 부담은 낮은 편입니다. 다만 연결 자본총계가 상반기에 35억 줄어든 반면 별도 자본은 33억 늘어, 내부 엑셀 수치를 재확인할 필요가 있습니다(확인할 것 #4).</p>
+    <h3>회사 발언·계획 이력</h3>
+    <div class="tbl-scroll"><table id="guideTbl"></table></div>
+  </div>
+</section>
+
+<!-- 자본 이력 -->
+<section id="capital">
+  <div class="card">
+    <h2><span class="no">06</span>자본·지배구조 이력</h2>
+    <div class="tbl-scroll"><table id="capTbl"></table></div>
+  </div>
+</section>
+
+<!-- 밸류 -->
+<section id="val">
+  <div class="card">
+    <h2><span class="no">07</span>밸류에이션</h2>
+    <p class="small">최근 4분기 순이익이 적자(4Q25 대규모 손실)라 PER 대신 <b>PBR(자산)</b>과 <b>PSR(매출)</b>을 봅니다. 입력칸은 직접 바꿔 볼 수 있습니다 <span class="tag est">추정</span>.</p>
+    <div class="calc">
+      <div><label>주가 (원)</label><input type="number" id="cPrice"></div>
+      <div><label>상장주식수 (주)</label><input type="number" id="cShares"></div>
+      <div><label>자본총계 (억)</label><input type="number" id="cEquity"></div>
+      <div><label>IP·투자자산 추가가치 (억)</label><input type="number" id="cGain" value="0"></div>
+      <div><label>추가가치 할인율 (%)</label><input type="number" id="cDisc" value="30"></div>
+      <div><label>최근 4분기 매출 (억)</label><input type="number" id="cSales"></div>
+    </div>
+    <div class="calc">
+      <div class="out"><span class="muted">시가총액</span><br><b id="oCap">–</b></div>
+      <div class="out"><span class="muted">BPS</span><br><b id="oBps">–</b></div>
+      <div class="out"><span class="muted">PBR</span><br><b id="oPbr">–</b></div>
+      <div class="out"><span class="muted">조정 PBR (추가가치 반영)</span><br><b id="oPbr2">–</b></div>
+      <div class="out"><span class="muted">PSR (TTM)</span><br><b id="oPsr">–</b></div>
+      <div class="out"><span class="muted">PBR 1배 주가</span><br><b id="oP1">–</b></div>
+    </div>
+    <h3>PBR 밴드</h3>
+    <figure>
+      <svg id="pbrBand" viewBox="0 0 900 260" role="img" aria-label="PBR 밴드"></svg>
+      <figcaption>선은 일봉 종가(수정주가), 점선은 최근 자본 기준 BPS × 0.5·0.75·1.0·1.25배. 4대천왕 등 자체 IP는 장부에 충분히 반영되지 않았을 수 있어 '추가가치' 칸으로 따로 가정해 볼 수 있습니다.</figcaption>
+    </figure>
+    <h3>동종업계 (26 반기 연결 실적, 시총 2026.08.14) <span class="tag ext">외부</span></h3>
+    <div class="tbl-scroll"><table id="peerTbl"></table></div>
+    <p class="muted" id="peerNote">반기 실적은 고정(내부 엑셀, 금감원 공시), 시총·PER·PBR은 시세 API 연결 시 KIS 실시간으로 바뀝니다. PSR은 반기 매출 × 2로 연환산. 우열 판단은 넣지 않음.</p>
+  </div>
+</section>
+
+<!-- 산업 -->
+<section id="industry">
+  <div class="card">
+    <h2><span class="no">08</span>산업 동향</h2>
+    <div class="tbl-scroll"><table id="indTbl"></table></div>
+  </div>
+</section>
+
+<!-- 누적 기록 -->
+<section id="log">
+  <div class="card">
+    <h2><span class="no">09</span>누적 기록 <span class="muted" style="font-size:13px;font-weight:400">미팅·IR·공시·기사·메모, 최신순</span></h2>
+    <div class="filters">
+      <div class="seg" id="logType"></div>
+      <input type="search" id="logSearch" placeholder="기록 검색 (예: 4대천왕, 병합, 에오스)">
+    </div>
+    <div id="logList"></div>
+
+    <details class="box" id="addBox" style="margin-top:8px">
+      <summary>＋ 사이트에서 기록 추가 (관리 토큰 필요)</summary>
+      <p class="muted small">Netlify 환경변수 <code>NOTE_ADMIN_TOKEN</code>에 넣은 값을 입력하면 이 브라우저에 기억됩니다. 여기서 추가한 기록은 서버(Netlify Blobs)에 저장돼 모든 기기에서 보입니다. '비공개'로 고른 기록은 토큰이 있는 브라우저에서만 보입니다.</p>
+      <div class="addform">
+        <input type="date" id="fDate">
+        <select id="fType"><option>미팅</option><option>IR</option><option>공시</option><option>기사</option><option>메모</option></select>
+        <select id="fSrc"><option value="hear">전언</option><option value="co">회사</option><option value="dis">공시</option><option value="ext">외부</option><option value="est">추정</option></select>
+        <input id="fTitle" placeholder="제목 (예: 3Q26 실적 발표 후 통화)">
+        <textarea id="fBody" placeholder="내용 — 한 줄에 하나씩 적으면 항목으로 나뉩니다"></textarea>
+        <input id="fLink" class="full" placeholder="링크 (선택)">
+        <select id="fVis"><option value="public">공개</option><option value="private">비공개</option></select>
+        <input type="password" id="fToken" placeholder="관리 토큰">
+        <button class="btn primary" id="fSave">저장</button>
+        <span class="muted small" id="fMsg" style="align-self:center"></span>
+      </div>
+    </details>
+  </div>
+</section>
+
+<!-- 확인할 것 -->
+<section id="open">
+  <div class="card">
+    <h2><span class="no">10</span>확인할 것 · 답 들은 것</h2>
+    <p class="muted">다음 미팅·IR에서 확인할 질문을 쌓아 두고, 답을 들으면 상태와 내용을 채웁니다.</p>
+    <div class="filters" id="openFilter"></div>
+    <div class="tbl-scroll"><table id="openTbl"></table></div>
+  </div>
+</section>
+
+<!-- 일정·리스크 -->
+<section id="watch">
+  <div class="card">
+    <h2><span class="no">11</span>추적 일정과 리스크</h2>
+    <div class="two">
+      <div><h3 style="margin-top:0">일정</h3><div class="tbl-scroll"><table id="calTbl"></table></div></div>
+      <div><h3 style="margin-top:0">리스크</h3><ul class="small" id="riskList"></ul></div>
+    </div>
+  </div>
+</section>
+
+<!-- 기사 -->
+<section id="news">
+  <div class="card">
+    <h2><span class="no">12</span>기사</h2>
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+      <h3 style="margin:0">실시간 뉴스 <span class="muted" style="font-weight:400;font-size:12.5px">네이버 뉴스 검색 · 최신순</span></h3>
+      <div class="filters" style="margin:0">
+        <div class="seg" id="liveNewsQ"><button data-q="미스터블루" class="on">미스터블루</button><button data-q="미스터블루 무협">무협</button><button data-q="미스터블루 웹툰">웹툰</button><button data-q="에오스 블랙">에오스</button></div>
+      </div>
+    </div>
+    <p class="muted small" style="margin:4px 0 8px">아카이브에 없는 새 기사에는 <span class="badge os-미확인">NEW</span> 표시. 관리 토큰이 있으면 "+ 기록"으로 누적 기록에 바로 넣을 수 있습니다.</p>
+    <div id="liveNews" class="small"></div>
+    <h3>기사 아카이브</h3>
+    <div class="filters"><input type="search" id="newsSearch" placeholder="기사 제목 검색"><span class="muted" id="newsCount"></span></div>
+    <div id="newsList" class="news small"></div>
+  </div>
+</section>
+
+<!-- 연혁 -->
+<section id="history">
+  <div class="card">
+    <h2><span class="no">13</span>회사 연혁</h2>
+    <div class="tl" id="timeline"></div>
+  </div>
+</section>
+
+<section id="glossary">
+  <div class="card">
+    <h2><span class="no">14</span>용어</h2>
+    <div class="tbl-scroll"><table id="glossTbl"></table></div>
+  </div>
+</section>
+
+<section id="src">
+  <div class="card small">
+    <h2><span class="no">15</span>출처 · 노트 수정 이력</h2>
+    <div class="two">
+      <div><h3 style="margin-top:0">출처</h3><ul id="srcList"></ul></div>
+      <div><h3 style="margin-top:0">수정 이력</h3><div class="tbl-scroll"><table id="chgTbl"></table></div></div>
+    </div>
+    <p class="muted">공개 정보와 내부 자료를 정리한 리서치 노트이며 투자 권유가 아닙니다. 블로그·커뮤니티는 출처로 쓰지 않았습니다.</p>
+  </div>
+</section>
+
+</main>
+<footer><div class="wrap">미스터블루 기업 노트 · 207760</div></footer>
+
+<script src="data/mrblue-data.js"></script>
+<script src="app.js"></script>
+<script src="market.js"></script>
+</body>
+</html>
