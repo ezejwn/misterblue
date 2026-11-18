@@ -15,12 +15,12 @@
 
   let LIVE = { price: D.META.refPrice, shares: D.META.sharesEst, ok: false };
   let DAILY = [];
-  let WEBLOG = [];
+  let WEBLOG = [], FEED = [], FEEDINFO = {}, DISC = [], discAll = false;
 
   /* ---------- 머리 ---------- */
   function header() {
     $("#created").textContent = D.META.created;
-    const dates = [...D.LOG.map((l) => l.date), ...D.CHANGELOG.map((c) => c[0]), ...WEBLOG.map((l) => l.date)];
+    const dates = [...D.LOG.map((l) => l.date), ...D.CHANGELOG.map((c) => c[0]), ...WEBLOG.map((l) => l.date), ...FEED.slice(0, 1).map((f) => f.date), ...DISC.slice(0, 1).map((x) => x.date)];
     $("#lastUpdated").textContent = dates.sort().slice(-1)[0] || D.META.created;
     $("#logCount").textContent = D.LOG.length + WEBLOG.length;
     $$(".eqAsOf").forEach((e) => (e.textContent = D.META.equityAsOf));
@@ -69,7 +69,7 @@
     $("#qTbl").innerHTML = "<thead><tr><th>분기</th><th class='n'>매출</th><th class='n'>영업이익</th><th class='n'>영업이익률</th><th>비고</th></tr></thead><tbody>" +
       D.QUARTERS.map((r) => {
         const m = r.op != null ? (r.op / r.s) * 100 : null;
-        return `<tr${r.guide ? ' style="background:#fffaf0"' : ""}><td>${r.q}${r.guide ? " (가이던스)" : ""}</td><td class="n">${fmt(r.s, r.s % 1 ? 1 : 0)}</td><td class="n ${signCls(r.op)}">${r.op == null ? "–" : fmt(r.op, Math.abs(r.op) < 10 ? 1 : 0)}</td><td class="n">${m == null ? "–" : fmt(m, 1) + "%"}</td><td class="small">${esc(r.src)} ${r.guide ? tag("hear") : r.est ? tag("est") : ""}</td></tr>`;
+        return `<tr${r.guide ? ' style="background:#fffaf0"' : ""}><td>${r.q}${r.guide ? " (가이던스)" : ""}</td><td class="n">${fmt(r.s, r.s % 1 ? 1 : 0)}</td><td class="n ${signCls(r.op)}">${r.op == null ? "–" : fmt(r.op, Math.abs(r.op) < 10 ? 1 : 0)}</td><td class="n">${m == null ? "–" : fmt(m, 1) + "%"}</td><td class="small">${r.rcept ? `<a href="https://dart.fss.or.kr/dsaf001/main.do?rcpNo=${r.rcept}" target="_blank" rel="noopener">${esc(r.src)}</a>` : esc(r.src)} ${r.dart ? tag("dis") : r.guide ? tag("hear") : r.est ? tag("est") : ""}</td></tr>`;
       }).join("") + "</tbody>";
 
     let b = "<thead><tr><th>항목</th>" + D.BS.cols.map((c) => `<th class="n">${c}</th>`).join("") + "</tr></thead><tbody>";
@@ -78,6 +78,58 @@
 
     $("#guideTbl").innerHTML = "<thead><tr><th>시점</th><th>내용</th></tr></thead><tbody>" + D.GUIDANCE.map(([d, t, s]) => `<tr><td class="n" style="text-align:left">${d}</td><td>${esc(t)} ${tag(s)}</td></tr>`).join("") + "</tbody>";
     qbars();
+  }
+  // DART 재무제표 자동 반영 (분기·반기·사업보고서) — 데이터 파일 값 위에 덮어씀
+  async function loadFin() {
+    try {
+      const j = await fetch("/.netlify/functions/financials").then((r) => r.json());
+      if (!j.ok) { $("#finInfo").textContent = j.error ? "DART 재무 자동 반영 안 됨 — " + j.error : ""; return; }
+      const qOrder = (q) => { const m = q.match(/^(\d)Q(\d\d)$/); return m ? +m[2] * 10 + +m[1] : 0; };
+      (j.quarters || []).forEach((x) => {
+        const row = { q: x.q, s: x.s, op: x.op, src: x.derived ? "DART 사업보고서 − 3분기 누적" : "DART 분기보고서", dart: true, rcept: x.rcept };
+        const i = D.QUARTERS.findIndex((r) => r.q === x.q);
+        if (i >= 0) D.QUARTERS[i] = row; else D.QUARTERS.push(row);
+      });
+      D.QUARTERS.sort((a, b) => qOrder(a.q) - qOrder(b.q));
+      const A = D.ANNUAL;
+      (j.annual || []).forEach((x) => {
+        let i = A.years.indexOf(x.year);
+        if (i < 0) { A.years.push(x.year); i = A.years.length - 1; }
+        A.sales[i] = x.sales; A.op[i] = x.op; if (A.ni) A.ni[i] = x.ni; if (A.ocf) A.ocf[i] = x.ocf;
+        // 부문별 표(rows): 연결 합계 줄만 DART로 채우고, 부문 줄은 새 연도면 빈칸
+        (A.rows || []).forEach((r) => {
+          const v = r[0] === "매출액" ? x.sales : r[0] === "영업이익" ? x.op : /^당기순이익/.test(r[0]) ? x.ni : undefined;
+          if (v !== undefined) r[1][i] = v; else if (r[1][i] === undefined) r[1][i] = null;
+        });
+      });
+      const map = { "자산총계": "assets", "유동자산": "curAssets", "비유동자산": "nonCurAssets", "현금성자산": "cash", "재고자산": "inv", "유형자산": "ppe", "부채총계": "liab", "유동부채": "curLiab", "비유동부채": "nonCurLiab", "총차입금(CB 포함)": "debt", "자본총계": "equity", "비지배지분": "nci", "지배주주 자본": "equityOwners" };
+      (j.bs || []).forEach((x) => {
+        const ck = (c) => (c.length === 4 ? c + ".12" : c);
+        let i = D.BS.cols.indexOf(x.col);
+        if (i < 0) {
+          // 지금 표의 마지막 시점보다 새로운 것만 열을 추가 (지난 분기 열은 늘리지 않음)
+          if (ck(x.col) <= ck(D.BS.cols[D.BS.cols.length - 1])) return;
+          D.BS.cols.push(x.col); i = D.BS.cols.length - 1;
+        }
+        D.BS.rows.forEach((r) => {
+          const k = map[r[0]];
+          if (k) r[1][i] = x[k];
+          else if (r[0] === "부채비율") r[1][i] = x.equity ? Math.round((x.liab / x.equity) * 100) : null;
+          else if (r[0] === "유동비율") r[1][i] = x.curLiab ? Math.round((x.curAssets / x.curLiab) * 100) : null;
+          else if (r[1][i] === undefined) r[1][i] = null; // DART에서 못 가져오는 줄은 빈칸(–)
+        });
+      });
+      const last = (j.bs || []).slice(-1)[0];
+      if (last && last.equity) {
+        D.META.equity = last.equity; D.META.equityAsOf = last.col;
+        if ($("#cEquity")) $("#cEquity").value = last.equity;
+      }
+      const real = D.QUARTERS.filter((r) => !r.guide).slice(-4);
+      if (real.length === 4) { D.META.ttmSales = Math.round(real.reduce((s, r) => s + r.s, 0)); if ($("#cSales")) $("#cSales").value = D.META.ttmSales; }
+      const lq = (j.quarters || []).slice(-1)[0];
+      $("#finInfo").innerHTML = lq ? `DART 재무제표 자동 반영 · 최신 <b>${lq.q}</b>${lq.rcept ? ` (<a href="https://dart.fss.or.kr/dsaf001/main.do?rcpNo=${lq.rcept}" target="_blank" rel="noopener">원문</a>)` : ""} · 새 분기·사업보고서가 나오면 30분 안에 바뀝니다` + (j.lastError ? ` · 일부 오류: ${esc(j.lastError)}` : "") : "DART 재무제표 확인 중 — 잠시 뒤 새로고침하면 반영됩니다";
+      finance(); header(); if (typeof calc === "function") calc();
+    } catch (e) { /* API 미연결 시 데이터 파일 값 그대로 */ }
   }
   function qbars() {
     const Q = D.QUARTERS, W = 900, H = 300, L = 50, R = 20, T = 28, B = 40;
@@ -149,20 +201,29 @@
       WEBLOG = [];
       $("#fMsg").textContent = "기록 API 미연결 — 배포 후 사용 가능 (데이터 파일 기록은 그대로 보임)";
     }
-    logs();
+    logs(); openQs(); news($("#newsSearch").value);
     if (typeof renderLiveNews === "function" && LIVENEWS.length) renderLiveNews();
   }
+  $("#fOpen").innerHTML = `<option value="">'확인할 것' 질문과 연결 안 함</option>` + D.OPEN.map((o, i) => `<option value="${i + 1}">Q${i + 1}. ${esc(o.q).slice(0, 60)}</option>`).join("");
+  $("#fOpen").addEventListener("change", () => { $("#fOpenSt").style.display = $("#fOpen").value ? "" : "none"; });
+  function openAdd(type) {
+    const box = $("#addBox"); box.open = true;
+    if (type) $("#fType").value = type;
+    box.scrollIntoView({ behavior: "smooth", block: "center" });
+    setTimeout(() => $("#fTitle").focus(), 350);
+  }
+  $("#fab").addEventListener("click", () => openAdd("미팅"));
   $("#fDate").value = new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
   $("#fSave").addEventListener("click", async () => {
     const token = $("#fToken").value.trim();
     ls.set("token", token);
-    const body = { date: $("#fDate").value, type: $("#fType").value, src: $("#fSrc").value, title: $("#fTitle").value, body: $("#fBody").value, link: $("#fLink").value, visibility: $("#fVis").value };
+    const body = { date: $("#fDate").value, type: $("#fType").value, src: $("#fSrc").value, title: $("#fTitle").value, body: $("#fBody").value, link: $("#fLink").value, visibility: $("#fVis").value, openIdx: $("#fOpen").value, openStatus: $("#fOpenSt").value };
     $("#fMsg").textContent = "저장 중…";
     try {
       const r = await fetch("/.netlify/functions/notes", { method: "POST", headers: { "content-type": "application/json", "x-admin-token": token }, body: JSON.stringify(body) });
       const j = await r.json();
       if (!j.ok) throw new Error(j.error);
-      $("#fTitle").value = ""; $("#fBody").value = ""; $("#fLink").value = "";
+      $("#fTitle").value = ""; $("#fBody").value = ""; $("#fLink").value = ""; $("#fOpen").value = "";
       $("#fMsg").textContent = "저장했습니다.";
       await loadWebLog();
     } catch (e) { $("#fMsg").textContent = "실패: " + e.message; }
@@ -178,33 +239,127 @@
   let openSt = "전체";
   function openQs() {
     const sts = ["전체", "미확인", "일부", "확인"];
-    $("#openFilter").innerHTML = `<div class="seg">${sts.map((s) => `<button data-s="${s}" class="${s === openSt ? "on" : ""}">${s}${s === "전체" ? "" : " " + D.OPEN.filter((o) => o.status === s).length}</button>`).join("")}</div>`;
-    const list = D.OPEN.filter((o) => openSt === "전체" || o.status === openSt);
+    // 사이트에서 추가한 기록 중 질문에 연결된 답을 반영 (최신 기록의 상태가 우선)
+    const OPEN = D.OPEN.map((o, i) => {
+      const ans = WEBLOG.filter((l) => l.openIdx === i + 1).sort((a, b) => a.date.localeCompare(b.date));
+      if (!ans.length) return o;
+      const last = ans[ans.length - 1];
+      return { ...o, status: last.openStatus || o.status, webAns: ans };
+    });
+    const list = OPEN.filter((o) => openSt === "전체" || o.status === openSt);
+    $("#openFilter").innerHTML = `<div class="seg">${sts.map((s) => `<button data-s="${s}" class="${s === openSt ? "on" : ""}">${s}${s === "전체" ? "" : " " + OPEN.filter((o) => o.status === s).length}</button>`).join("")}</div>`;
     $("#openTbl").innerHTML = "<thead><tr><th style='width:34px'>#</th><th>확인할 것</th><th>왜</th><th>상태</th><th>들은 내용</th></tr></thead><tbody>" +
-      list.map((o) => `<tr><td class="muted">${D.OPEN.indexOf(o) + 1}</td><td>${esc(o.q)}</td><td class="small muted">${esc(o.why)}</td><td><span class="badge os-${o.status}">${o.status}</span></td><td class="small">${o.answer ? esc(o.answer) + (o.date ? ` <span class="muted">${o.date}</span>` : "") : "–"}</td></tr>`).join("") + "</tbody>";
+      list.map((o) => `<tr><td class="muted">${OPEN.indexOf(o) + 1}</td><td>${esc(o.q)}</td><td class="small muted">${esc(o.why)}</td><td><span class="badge os-${o.status}">${o.status}</span></td><td class="small">${o.answer ? esc(o.answer) + (o.date ? ` <span class="muted">${o.date}</span>` : "") : (o.webAns ? "" : "–")}${(o.webAns || []).map((l) => `<div style="margin-top:3px">${esc((l.body && l.body.length ? l.body.join(" · ") : l.title))} <span class="muted">${l.date} · ${l.type}</span></div>`).join("")}</td></tr>`).join("") + "</tbody>";
   }
   $("#openFilter").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) { openSt = b.dataset.s; openQs(); } });
 
   /* ---------- 기사 ---------- */
+  const nkey = (u) => { const m = String(u || "").match(/article\/(\d{3})\/(\d{6,})/); return m ? m[1] + "-" + m[2] : String(u || ""); };
+  const ntitle = (t) => String(t || "").replace(/[\s"'“”‘’\[\]【】()<>…·.,!?~\-–—]/g, "").toLowerCase();
+  function allNews() {
+    // [월, 제목, 링크, 자동수집 항목]
+    const seenK = new Set(), seenT = new Set(), out = [];
+    const push = (m, t, l, f) => { const k = nkey(l), tt = ntitle(t); if (seenK.has(k) || seenT.has(tt)) return; seenK.add(k); seenT.add(tt); out.push([m, t, l, f]); };
+    FEED.forEach((f) => push(f.date.slice(0, 7), f.title, f.link, f));
+    D.NEWS.forEach((n) => push(n[0], n[1], n[2], null));
+    return out;
+  }
   function news(q = "") {
     q = q.trim().toLowerCase();
-    const list = D.NEWS.filter((n) => !q || n[1].toLowerCase().includes(q));
+    const list = allNews().filter((n) => !q || n[1].toLowerCase().includes(q));
     const byM = {};
     list.forEach((n) => (byM[n[0]] = byM[n[0]] || []).push(n));
-    $("#newsList").innerHTML = Object.keys(byM).sort().reverse().map((m) => `<h3 style="font-size:14px;margin:14px 0 4px">${m.replace("-", ".")}</h3><ul style="margin:0;padding-left:18px">${byM[m].map((n) => `<li><a href="${n[2]}" target="_blank" rel="noopener">${esc(n[1])}</a></li>`).join("")}</ul>`).join("");
-    $("#newsCount").textContent = `${list.length}건`;
+    const recent = Date.now() - 3 * 86400e3;
+    $("#newsList").innerHTML = Object.keys(byM).sort().reverse().map((m) => `<h3 style="font-size:14px;margin:14px 0 4px">${m.replace("-", ".")}</h3><ul style="margin:0;padding-left:18px">${byM[m].map((n) => {
+      const f = n[3];
+      const meta = f ? ` <span class="muted">${f.date.slice(5).replace("-", ".")}${f.press ? " · " + esc(f.press) : ""}</span>${new Date(f.collectedAt).getTime() > recent ? ' <span class="badge os-미확인">NEW</span>' : ""}${ADMIN ? ` <button class="btn" data-hide="${esc(f.id)}" title="관련 없는 기사 숨기기" style="padding:0 6px;font-size:11px">숨김</button>` : ""}` : "";
+      return `<li><a href="${esc(n[2])}" target="_blank" rel="noopener">${esc(n[1])}</a>${meta}</li>`;
+    }).join("")}</ul>`).join("");
+    $("#newsCount").textContent = `${list.length}건` + (FEED.length ? ` (자동 수집 ${FEED.length}건)` : "");
   }
+  async function loadFeed(refresh) {
+    $("#feedInfo").textContent = refresh ? "수집 중…" : "";
+    try {
+      const r = await fetch("/.netlify/functions/newsfeed" + (refresh ? "?refresh=1" : "")); const j = await r.json();
+      if (!j.ok) throw new Error(j.error);
+      FEED = j.data || []; FEEDINFO = j;
+      const t = j.lastRun ? new Date(j.lastRun).toLocaleString("ko-KR", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "–";
+      const add = j.run && j.run.added ? ` · 방금 ${j.run.added}건 추가` : "";
+      $("#feedInfo").textContent = `네이버 증권 자동 수집 · 30분마다 · 마지막 확인 ${t}${add}` + (j.lastError ? (/^검색:/.test(j.lastError) && !/증권:/.test(j.lastError) ? " · (보조 검색 API 키 오류 — 네이버 증권 수집은 정상)" : ` · 오류: ${j.lastError}`) : "");
+      news($("#newsSearch").value); header(); updateBanner();
+      if (LIVENEWS.length) renderLiveNews();
+    } catch (e) {
+      $("#feedInfo").textContent = "자동 수집 API 미연결 — 배포 후 동작합니다.";
+    }
+  }
+  $("#feedRefresh").addEventListener("click", () => loadFeed(true));
+
+  // 지난 방문 이후 새로 들어온 기사·공시 알림 (이 브라우저 기준)
+  const firstSeen = ls.get("lastSeen", null);
+  let lastSeen = firstSeen || new Date().toISOString();
+  if (!firstSeen) ls.set("lastSeen", lastSeen);
+  function updateBanner() {
+    const since = new Date(lastSeen).getTime();
+    const isNew = (x) => x.collectedAt && new Date(x.collectedAt).getTime() > since;
+    const nSelf = FEED.filter((f) => isNew(f) && !f.co), nCo = FEED.filter((f) => isNew(f) && f.co), nDisc = DISC.filter(isNew);
+    const total = nSelf.length + nCo.length + nDisc.length;
+    document.title = (total ? `(${total}) ` : "") + document.title.replace(/^\(\d+\) /, "");
+    if (!total) { $("#newBanner").style.display = "none"; return; }
+    const when = new Date(lastSeen).toLocaleString("ko-KR", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" });
+    const parts = [nSelf.length && `기사 <b>${nSelf.length}</b>건`, nCo.length && `관련 종목 기사 <b>${nCo.length}</b>건`, nDisc.length && `공시 <b>${nDisc.length}</b>건`].filter(Boolean).join(" · ");
+    const first = [...nDisc.map((x) => "[공시] " + x.title), ...nSelf.map((f) => f.title), ...nCo.map((f) => "[" + f.co + "] " + f.title)][0];
+    $("#newBanner").innerHTML = `<span>🔔 지난 확인(${when}) 이후 새로 들어옴: ${parts}</span><span class="muted" style="color:#9a6a1a">${esc(first || "")}</span><a href="#news">보기</a><button id="seenBtn">확인했음</button>`;
+    $("#newBanner").style.display = "";
+    $("#seenBtn").addEventListener("click", () => { lastSeen = new Date().toISOString(); ls.set("lastSeen", lastSeen); updateBanner(); news($("#newsSearch").value); discs(); });
+  }
+  // 페이지를 열어 두면 10분마다 새 기사·공시 확인
+  setInterval(() => { loadFeed(); loadDisc(); }, 10 * 60e3);
+
+  // 공시 아카이브 (DART·네이버 증권 자동 수집)
+  function discs() {
+    const q = $("#discSearch").value.trim().toLowerCase();
+    const list = DISC.filter((x) => !q || (x.title + " " + (x.filer || "")).toLowerCase().includes(q));
+    const show = discAll || q ? list : list.slice(0, 15);
+    const recent = Date.now() - 3 * 86400e3;
+    $("#discList").innerHTML = show.length ? `<table>${show.map((x) => `<tr><td class="d">${x.date.replace(/-/g, ".")}</td><td><a href="${esc(x.link)}" target="_blank" rel="noopener">${esc(x.title)}</a>${x.rm && /정|철/.test(x.rm) ? ` <span class="muted">(${esc(x.rm)})</span>` : ""}${x.collectedAt && new Date(x.collectedAt).getTime() > recent ? ' <span class="badge os-미확인">NEW</span>' : ""}</td><td class="f">${esc(x.filer || "")}</td></tr>`).join("")}</table>` : '<p class="muted">공시가 아직 없습니다.</p>';
+    $("#discCount").textContent = DISC.length ? `${list.length}건` : "";
+    $("#discMore").style.display = !q && list.length > 15 ? "" : "none";
+    $("#discMore").textContent = discAll ? "최근 15건만" : `전체 ${list.length}건 보기`;
+  }
+  async function loadDisc(refresh) {
+    $("#discInfo").textContent = refresh ? "확인 중…" : "";
+    try {
+      const r = await fetch("/.netlify/functions/disclosures" + (refresh ? "?refresh=1" : "")); const j = await r.json();
+      if (!j.ok) throw new Error(j.error);
+      DISC = j.data || [];
+      const t = j.lastRun ? new Date(j.lastRun).toLocaleString("ko-KR", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "–";
+      const add = j.run && j.run.added ? ` · 방금 ${j.run.added}건 추가` : "";
+      $("#discInfo").textContent = `${(j.sources || []).join("·") || "DART"} 자동 수집 · 30분마다 · 마지막 확인 ${t}${add}` + (!j.dartKey ? " · DART 키 미설정(네이버 증권 최근분만)" : "") + (j.lastError ? ` · 일부 오류: ${j.lastError}` : "");
+      discs(); header(); updateBanner(); if (DAILY.length) drawChart(+$("#rangeSeg .on").dataset.d);
+    } catch (e) {
+      $("#discInfo").textContent = "공시 수집 API 미연결 — 배포 후 동작합니다.";
+    }
+  }
+  $("#discRefresh").addEventListener("click", () => loadDisc(true));
+  $("#discSearch").addEventListener("input", discs);
+  $("#discMore").addEventListener("click", () => { discAll = !discAll; discs(); });
+  $("#newsList").addEventListener("click", async (e) => {
+    const id = e.target.dataset && e.target.dataset.hide; if (!id) return;
+    if (!confirm("이 기사를 아카이브에서 숨길까요? (다시 수집되지 않습니다)")) return;
+    await fetch("/.netlify/functions/newsfeed?hide=" + encodeURIComponent(id), { method: "POST", headers: { "x-admin-token": ls.get("token", "") } });
+    loadFeed();
+  });
   $("#newsSearch").addEventListener("input", (e) => news(e.target.value));
 
   /* ---------- 실시간 뉴스 (네이버) ---------- */
   let LIVENEWS = [], liveQ = D.META.name;
-  const known = () => new Set([...D.NEWS.map((n) => n[2]), ...[...D.LOG, ...WEBLOG].map((l) => l.link).filter(Boolean)]);
+  const known = () => new Set([...D.NEWS.map((n) => n[2]), ...FEED.map((f) => f.link), ...[...D.LOG, ...WEBLOG].map((l) => l.link).filter(Boolean)]);
   async function loadLiveNews() {
     $("#liveNews").innerHTML = `<p class="muted">불러오는 중…</p>`;
     try {
       const r = await fetch("/.netlify/functions/news?display=20&query=" + encodeURIComponent(liveQ)); const j = await r.json();
       if (!j.ok) throw new Error(j.error);
-      LIVENEWS = j.data; renderLiveNews();
+      LIVENEWS = j.data; $("#liveSrc").textContent = j.source === "naver-stock-archive" ? "네이버 증권 종목뉴스 · 최신순" : j.source === "google-news" ? "Google 뉴스 · 최신순" : "네이버 뉴스 검색 · 최신순"; renderLiveNews();
     } catch (e) {
       $("#liveNews").innerHTML = `<p class="muted">뉴스 API 미연결 — Netlify 환경변수에 NAVER_CLIENT_ID / NAVER_CLIENT_SECRET을 넣으면 표시됩니다.</p>`;
     }
@@ -275,7 +430,7 @@
     s += `<path d="${p} L${x(data.length - 1)},${H - B} L${L},${H - B}Z" fill="#2457d6" opacity=".08"/><path d="${p}" fill="none" stroke="#2457d6" stroke-width="2"/>`;
     [0, Math.floor(data.length / 2), data.length - 1].forEach((i) => { const d = data[i].d; s += `<text x="${x(i)}" y="${H - 6}" text-anchor="${i ? (i === data.length - 1 ? "end" : "middle") : "start"}" font-size="10" fill="#8a93a3">${d.slice(2, 4)}.${d.slice(4, 6)}.${d.slice(6)}</text>`; });
     // 누적 기록 중 미팅·공시 날짜를 차트에 점으로
-    const marks = [...D.LOG, ...WEBLOG].filter((l) => l.type === "미팅" || l.type === "공시");
+    const marks = [...D.LOG, ...WEBLOG].filter((l) => l.type === "미팅" || l.type === "공시").concat(DISC.map((x) => ({ date: x.date, type: "공시", title: x.title })));
     marks.forEach((m) => {
       const key = m.date.replace(/-/g, ""); const i = data.findIndex((d) => d.d >= key);
       if (i >= 0) s += `<circle cx="${x(i)}" cy="${y(data[i].c)}" r="4" fill="${m.type === "미팅" ? "#d27a12" : "#2f6fd6"}" stroke="#fff" stroke-width="1.5"><title>${m.date} ${esc(m.title)}</title></circle>`;
@@ -352,7 +507,7 @@
   ["cPrice", "cShares", "cEquity", "cGain", "cDisc", "cSales"].forEach((id) => $("#" + id).addEventListener("input", calc));
   $("#rangeSeg").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; $$("#rangeSeg button").forEach((x) => x.classList.toggle("on", x === b)); drawChart(+b.dataset.d); });
   calc(); peers(); drawChart(180); drawPBRBand();
-  loadWebLog(); loadLiveNews();
+  loadWebLog(); loadLiveNews(); loadFeed(); loadDisc(); loadFin();
   // 시세는 순서대로: 현재가로 토큰을 먼저 확보한 뒤 나머지 (토큰 발급 1분 1회 제한 대응)
   (async () => { await loadPrice(); await loadDaily(); await loadInvestor(); await loadPeers(); })();
   setInterval(() => { const h = (new Date().getUTCHours() + 9) % 24; if (h >= 9 && h < 16) loadPrice(); }, 60000);

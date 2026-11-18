@@ -64,3 +64,11 @@
 
 ## 공개 범위
 netlify.app 주소는 링크를 아는 누구나 볼 수 있습니다(검색 노출만 `noindex`로 막음). 내부 엑셀 수치·보도자료 초안·미공개 2차 표지가 들어 있으니 공유 범위에 유의하세요.
+
+## 자동 업데이트 (2026-11-18 추가)
+- **기사:** 30분마다 네이버 증권 미스터블루(207760) 기사를 모아 12번 기사 아카이브에 누적합니다(`netlify/lib/newsfeed.js`).
+- **공시:** DART 공시검색으로 공시를 누적합니다. 새 공시는 30분 안에 NEW로 붙습니다(`netlify/lib/disclosures.js`).
+- **실적:** DART 분기·반기·사업보고서의 연결 손익(별도 손익 함께)과 재무상태로 05번 표·차트·자본·최근 4분기 매출을 갱신합니다(`netlify/lib/financials.js`).
+- **알림:** 페이지 맨 위에 이 브라우저에서 마지막으로 '확인했음'을 누른 뒤 새로 들어온 기사·공시 수를 보여 줍니다.
+- **직접 기록:** 오른쪽 아래 ＋ 기록 버튼 → 누적 기록에 추가(`NOTE_ADMIN_TOKEN` 필요). '확인할 것' 질문에 연결하면 상태·답이 함께 바뀝니다.
+- **환경변수:** `DART_API_KEY`(opendart.fss.or.kr, 40자), `NAVER_CLIENT_ID`/`NAVER_CLIENT_SECRET`(NAVER API HUB 10/40자 또는 개발자센터 20/10자), `NOTE_ADMIN_TOKEN`, `KIS_APPKEY`/`KIS_APPSECRET`. 키 점검: `/.netlify/functions/newsfeed?diag=1`

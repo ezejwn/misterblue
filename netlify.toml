@@ -5,3 +5,13 @@
 [functions]
   node_bundler = "esbuild"
   external_node_modules = ["@netlify/blobs"]
+
+# 미스터블루 기사(네이버 증권)·공시·재무제표(DART) 자동 수집 (30분마다)
+[functions."news-collect"]
+  schedule = "*/30 * * * *"
+
+# 페이지·스크립트·데이터는 매번 새 버전 확인 (내용 갱신이 바로 보이도록)
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
