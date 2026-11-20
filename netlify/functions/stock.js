@@ -314,6 +314,7 @@ exports.handler = async function (event) {
       if (!codes.length) return res({ ok: false, error: "codes=005930,000660 형식으로 넣어 주세요" }, 400);
       return res({ ok: true, at: new Date().toISOString(), data: await multi(event, codes) }, 200, 30);
     }
+    if (type === "stockinfo") { const j = await kis(event, "/uapi/domestic-stock/v1/quotations/search-stock-info", "CTPF1002R", { PRDT_TYPE_CD: "300", PDNO: code }); const o = j.output || {}; return res({ ok: true, idx: Object.fromEntries(Object.entries(o).filter(([k]) => /idx|bztp|std_idst|sctr/i.test(k))) }); }
     if (type === "sectors") { const p = tidyPrice(await price(event, code)); const r = await sectorIndex(event, p.sector, p.market); return res({ ok: true, sector: p.sector, market: p.market, match: r.match, list: r.list }); }
     if (type === "flow") return res({ ok: true, code, data: await flow(event, code) }, 200, 45);
     return res({ ok: false, error: "type은 price | daily | investor | index | indexdaily | multi" }, 400);
